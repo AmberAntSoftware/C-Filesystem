@@ -18,9 +18,18 @@
 
 #endif
 
+
+
+typedef struct DIR_X_PathChunk{
+
+    char* path;
+    size_t owningDirectory;
+
+}DIR_X_PathChunk;
+
 typedef struct DIR_FileList{
 
-    char** paths;
+    DIR_X_PathChunk *paths;
 
     size_t length;
     size_t dirCount;

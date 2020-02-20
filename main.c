@@ -15,12 +15,12 @@ int main()
     puts("\n\n\n");
 
 
-    DIR_FileList *list = DIR_newFileList("C:/");
+    DIR_FileList *list = DIR_newFileList("C:/Users");
 
     if(list != NULL){
         size_t i;
         for(i=0;i< list->length;i++){
-            puts(list->paths[i]);
+            puts(list->paths[i].path);
         }
         DIR_freeFileList(list);
     }

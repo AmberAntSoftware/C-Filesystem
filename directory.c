@@ -1,11 +1,14 @@
 #include "directory.h"
 
 static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path);
-static signed char DIR_X_addFileName(DIR_FileList *files, const char* fileName, size_t pos);
+static signed char DIR_X_addFileName(DIR_FileList *files, const char* fileName, size_t pos, size_t owningPath);
+
 static char* DIR_X_fixPath(const char *path);
 #ifdef _WIN32
 static char* DIR_X_fixWindowsPath(const char *path);
 #endif // _WIN32
+
+#define DIR_X_NO_OWNING_DIRECTORY (~((size_t)0))
 
 DIR_FileList* DIR_newFileList(const char *path){
 
@@ -54,15 +57,15 @@ unsigned char DIR_exists(const char *path){
     }
 
 #ifdef _WIN32
-    WIN32_FIND_DATA fdFile;
-    HANDLE hFind = NULL;
+    WIN32_FIND_DATA winFile;
+    HANDLE sysHandle = NULL;
 
-    if((hFind = FindFirstFile(modPath, &fdFile)) == INVALID_HANDLE_VALUE)
+    if((sysHandle = FindFirstFile(modPath, &winFile)) == INVALID_HANDLE_VALUE)
     {
         found = 0;
     }else{
         found = 1;
-        FindClose(hFind);
+        FindClose(sysHandle);
     }
 
 #else
@@ -219,7 +222,7 @@ static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path){
     }
 
     do {
-        if(DIR_X_addFileName(files,winFile.cFileName,i)!=-1) {
+        if(DIR_X_addFileName(files,winFile.cFileName,i,DIR_X_NO_OWNING_DIRECTORY)!=-1) {
             if(winFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY) {
                 if(i > files->dirCount){
                     ///
@@ -250,7 +253,7 @@ static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path){
     {
         while ((ent = readdir (dir)) != NULL)
         {
-            if(DIR_X_addFileName(files,ent->d_name,i)!=-1){
+            if(DIR_X_addFileName(files,ent->d_name,i,DIR_X_NO_OWNING_DIRECTORY)!=-1){
                 i++;
             }
         }
@@ -273,7 +276,7 @@ static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path){
     if(i==0){
         free(files->paths);
     }else{
-        char** dat = realloc(files->paths,sizeof(char*)*i);
+        char** dat = realloc(files->paths,sizeof(DIR_X_PathChunk)*i);
         if(dat!=NULL){
             files->paths=dat;
         }
@@ -284,25 +287,24 @@ static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path){
 }
 
 
-static signed char DIR_X_addFileName(DIR_FileList *files, const char* fileName, size_t pos){
+static signed char DIR_X_addFileName(DIR_FileList *files, const char* fileName, size_t pos, size_t owningPath){
 
     if(strcmp(fileName, ".") == 0 || strcmp(fileName, "..") == 0) {
-        return 0;
+        return -1;
     }
 
-    char** dat;
+    DIR_X_PathChunk* dat;
 
     if(pos >= files->length){
-        if(files->length == 0){
-            files->length=1;
-            dat = malloc(sizeof(char*));
+        if(files->paths == NULL){
+            dat = malloc(sizeof(DIR_X_PathChunk));
             if(dat==NULL){
-                files->length = 0;
                 return -1;
             }
+            files->length=1;
             files->paths = dat;
         }else{
-            dat = realloc(files->paths,sizeof(char*) * (files->length*2));
+            dat = realloc(files->paths,sizeof(DIR_X_PathChunk) * (files->length*2));
             if(dat == NULL){
                 files->length = pos;
                 return -1;
@@ -313,19 +315,21 @@ static signed char DIR_X_addFileName(DIR_FileList *files, const char* fileName, 
 
     }
 
+    files->paths[pos].owningDirectory = owningPath;
+
     size_t slen = strlen(fileName);
 
-    files->paths[pos] = malloc(sizeof(char)*  (slen+1));
-    if(files->paths[pos]==NULL){
-        char** dat = realloc(files->paths,sizeof(char*)*(pos));
+    files->paths[pos].path = malloc(sizeof(char)*  (slen+1));
+    if(files->paths[pos].path == NULL){
+        DIR_X_PathChunk* dat = realloc(files->paths,sizeof(DIR_X_PathChunk)*(pos));
         if(dat!=NULL){
             files->paths = dat;
         }
         files->length = pos;
         return -1;
     }
-    memcpy(files->paths[pos],fileName,sizeof(char)*(slen));
-    files->paths[pos][slen] = '\0';
+    memcpy(files->paths[pos].path,fileName,sizeof(char)*(slen));
+    files->paths[pos].path[slen] = '\0';
 
     return 0;
 }
@@ -338,7 +342,7 @@ void DIR_freeFileListData(DIR_FileList *files){
 
     size_t i;
     for(i=0; i < files->length; i++){
-        free(files->paths[i]);
+        free(files->paths[i].path);
     }
 
     free(files->paths);
