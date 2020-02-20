@@ -35,6 +35,7 @@ void DIR_freeFileListData(DIR_FileList *files);
 
 unsigned char DIR_exists(const char *path);
 unsigned char DIR_isDirectory(const char *path);
+size_t DIR_fileCount(const char *path);
 
 //////////////////////
 

@@ -85,6 +85,7 @@ unsigned char DIR_exists(const char *path){
 
     return found;
 }
+
 unsigned char DIR_isDirectory(const char *path){
 
     char *dump = DIR_X_fixPath(path);
@@ -95,14 +96,14 @@ unsigned char DIR_isDirectory(const char *path){
     }
 
 #ifdef _WIN32
-    WIN32_FIND_DATA fdFile;
-    HANDLE hFind = NULL;
+    WIN32_FIND_DATA winFile;
+    HANDLE sysHandle = NULL;
 
-    if((hFind = FindFirstFile(modPath, &fdFile)) != INVALID_HANDLE_VALUE)
+    if((sysHandle = FindFirstFile(modPath, &winFile)) != INVALID_HANDLE_VALUE)
     {
-        if( (fdFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0){
+        if( (winFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0){
             isDir = 1;
-            FindClose(hFind);
+            FindClose(sysHandle);
         }
     }
 
@@ -123,7 +124,73 @@ unsigned char DIR_isDirectory(const char *path){
     return isDir;
 }
 
+size_t DIR_fileCount(const char *path){
 
+    size_t fileCount = 0;
+
+#ifdef _WIN32
+
+    char *dump = DIR_X_fixWindowsPath(path);
+    const char* modPath = dump;
+    if(modPath == NULL){
+        modPath = path;
+    }
+
+    WIN32_FIND_DATA winFile;
+    HANDLE sysHandle = NULL;
+
+    if((sysHandle = FindFirstFile(modPath, &winFile)) == INVALID_HANDLE_VALUE) {
+        return 0;
+    }
+
+    do {
+        if(strcmp(winFile.cFileName, ".") != 0 && strcmp(winFile.cFileName, "..") != 0) {
+            fileCount++;
+        }
+    } while(FindNextFile(sysHandle, &winFile));
+
+    FindClose(sysHandle);
+
+    if(dump != NULL){
+        free(dump);
+    }
+
+#else
+
+    char *dump = DIR_X_fixPath(path);
+    const char* modPath = dump;
+    if(modPath == NULL){
+        modPath = path;
+    }
+
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir (modPath)) != NULL)
+    {
+        while ((ent = readdir (dir)) != NULL)
+        {
+            if(strcmp(fileName, ".") != 0 && strcmp(fileName, "..") != 0) {
+                fileCount++;
+            }
+        }
+        closedir (dir);
+    }
+    else
+    {
+        if(dump != NULL){
+            free(dump);
+        }
+        return 0;
+    }
+
+    if(dump != NULL){
+        free(dump);
+    }
+
+#endif
+
+    return fileCount;
+}
 
 
 
@@ -134,7 +201,7 @@ unsigned char DIR_isDirectory(const char *path){
 
 
 static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path){
-    size_t i = 0;
+    size_t i = files->length;
 
 #ifdef _WIN32
 
@@ -144,16 +211,16 @@ static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path){
         modPath = path;
     }
 
-    WIN32_FIND_DATA fdFile;
-    HANDLE hFind = NULL;
+    WIN32_FIND_DATA winFile;
+    HANDLE sysHandle = NULL;
 
-    if((hFind = FindFirstFile(modPath, &fdFile)) == INVALID_HANDLE_VALUE) {
+    if((sysHandle = FindFirstFile(modPath, &winFile)) == INVALID_HANDLE_VALUE) {
         return NULL;
     }
 
     do {
-        if(DIR_X_addFileName(files,fdFile.cFileName,i)!=-1) {
-            if(fdFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY) {
+        if(DIR_X_addFileName(files,winFile.cFileName,i)!=-1) {
+            if(winFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY) {
                 if(i > files->dirCount){
                     ///
                 }
@@ -161,9 +228,9 @@ static void* DIR_X_addFilesInDirectory(DIR_FileList *files, const char *path){
             }
             i++;
         }
-    } while(FindNextFile(hFind, &fdFile));
+    } while(FindNextFile(sysHandle, &winFile));
 
-    FindClose(hFind);
+    FindClose(sysHandle);
 
     if(dump != NULL){
         free(dump);

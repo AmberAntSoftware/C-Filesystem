@@ -10,6 +10,8 @@ int main()
     printf("IsDir: %i\n",DIR_isDirectory("C:"));
     printf("Exists: %i\n",DIR_exists("C:/"));
     printf("Exists: %i\n",DIR_exists("C:"));
+    printf("Count: %u\n",(unsigned int)DIR_fileCount("C:/"));
+    printf("Count: %u\n",(unsigned int)DIR_fileCount("C:"));
     puts("\n\n\n");
 
 
