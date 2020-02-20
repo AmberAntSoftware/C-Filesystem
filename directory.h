@@ -8,11 +8,11 @@
 
 #ifdef _WIN32
 
-    #include "windows.h"
+    #include <windows.h>
 
 #else
 
-    #include "dirent.h"
+    #include <dirent.h>
     #include <sys/stat.h>
     #include <unistd.h>
 
@@ -33,8 +33,8 @@ void* DIR_initFileList(DIR_FileList *files, const char *path);
 void DIR_freeFileList(DIR_FileList *files);
 void DIR_freeFileListData(DIR_FileList *files);
 
-char DIR_exists(const char *path);
-char DIR_isDirectory(const char *path);
+unsigned char DIR_exists(const char *path);
+unsigned char DIR_isDirectory(const char *path);
 
 //////////////////////
 

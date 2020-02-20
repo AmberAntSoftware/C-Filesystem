@@ -5,22 +5,6 @@
 
 int main()
 {
-    printf("Hello world!\n");
-
-    /*
-    DIR_FileList list;
-    DIR_initFileList(&list,"C:/*");
-
-
-    if(list.files != NULL){
-        size_t i;
-        for(i=0;i< list.length;i++){
-            puts(list.files[i]);
-        }
-    }
-
-    DIR_freeFileListData(&list);
-    /*/
 
     printf("IsDir: %i\n",DIR_isDirectory("C:/"));
     printf("IsDir: %i\n",DIR_isDirectory("C:"));
@@ -38,8 +22,6 @@ int main()
         }
         DIR_freeFileList(list);
     }
-
-    //*/
 
     return 0;
 }
