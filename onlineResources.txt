@@ -1,0 +1,7 @@
+https://stackoverflow.com/questions/2314542/listing-directory-contents-using-c-and-windows
+https://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
+https://www.geeksforgeeks.org/c-program-list-files-sub-directories-directory/
+https://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
+https://bytes.com/topic/c/answers/215864-determine-os-compiler
+
+https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirstfilea
